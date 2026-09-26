@@ -6,6 +6,7 @@ public class CameraFollow : MonoBehaviour
     [SerializeField] private Vector3 offset = new Vector3(0f, 5f, -8f);
     [SerializeField] private float followSpeed = 8f;
     [SerializeField] private float rotationSpeed = 8f;
+    [SerializeField] private float lookHeight = 0.8f;
 
     private void LateUpdate()
     {
@@ -20,8 +21,11 @@ public class CameraFollow : MonoBehaviour
             followSpeed * Time.deltaTime
         );
 
+        Vector3 lookTarget =
+            target.position + Vector3.up * lookHeight;
+
         Quaternion desiredRotation = Quaternion.LookRotation(
-            target.position - transform.position,
+            lookTarget - transform.position,
             Vector3.up
         );
 
