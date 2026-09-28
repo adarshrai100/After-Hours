@@ -131,6 +131,7 @@ GameObject:
   - component: {fileID: 69908648}
   - component: {fileID: 69908647}
   - component: {fileID: 69908652}
+  - component: {fileID: 69908653}
   m_Layer: 0
   m_Name: Taxi
   m_TagString: Player
@@ -220,6 +221,18 @@ MonoBehaviour:
   naturalDeceleration: 4
   steeringSpeed: 90
   collisionSkin: 0.05
+--- !u!114 &69908653
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 69908646}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 339b3cf71ce1ecb448ef585f62c98ca2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TaxiWallet
 --- !u!1 &100627879
 GameObject:
   m_ObjectHideFlags: 0
@@ -2216,6 +2229,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TaxiJobManager
   jobTimeLimit: 30
+  pickupPoint: {fileID: 283984261}
+  destinationPoint: {fileID: 589923273}
+  wallet: {fileID: 69908653}
 --- !u!1 &1347907425
 GameObject:
   m_ObjectHideFlags: 0

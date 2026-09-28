@@ -19,6 +19,7 @@ public class TaxiJobManager : MonoBehaviour
 
     private GameObject pickupMarker;
     private GameObject destinationMarker;
+    [SerializeField] private TaxiWallet wallet;
 
     private JobState currentState = JobState.WaitingForPassenger;
     private float remainingTime;
@@ -74,7 +75,14 @@ public class TaxiJobManager : MonoBehaviour
 
         currentState = JobState.JobComplete;
 
-        Debug.Log("Passenger delivered! Job complete.");
+        const int reward = 100;
+
+        if (wallet != null)
+        {
+            wallet.AddCredits(reward);
+        }
+
+        Debug.Log($"Passenger delivered! Reward: {reward} credits.");
 
         UpdateMarkers();
     }
