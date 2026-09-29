@@ -356,6 +356,7 @@ GameObject:
   - component: {fileID: 283984259}
   - component: {fileID: 283984260}
   - component: {fileID: 283984261}
+  - component: {fileID: 283984262}
   m_Layer: 0
   m_Name: PickupPoint_01
   m_TagString: Untagged
@@ -413,6 +414,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PassengerPickup
   jobManager: {fileID: 1314458752}
+--- !u!114 &283984262
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 283984258}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 82b8f335f98d7384587e8c4a7fe08eef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TaxiJobPoint
+  pointType: 0
 --- !u!1 &315763347
 GameObject:
   m_ObjectHideFlags: 0
@@ -1076,6 +1090,7 @@ GameObject:
   - component: {fileID: 589923271}
   - component: {fileID: 589923272}
   - component: {fileID: 589923273}
+  - component: {fileID: 589923274}
   m_Layer: 0
   m_Name: DestinationPoint_01
   m_TagString: Untagged
@@ -1133,6 +1148,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PassengerDestination
   jobManager: {fileID: 1314458752}
+--- !u!114 &589923274
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 589923270}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 82b8f335f98d7384587e8c4a7fe08eef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TaxiJobPoint
+  pointType: 1
 --- !u!1 &628156044
 GameObject:
   m_ObjectHideFlags: 0

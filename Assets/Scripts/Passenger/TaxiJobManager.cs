@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class TaxiJobManager : MonoBehaviour
@@ -12,30 +13,48 @@ public class TaxiJobManager : MonoBehaviour
 
     [Header("Job Settings")]
     [SerializeField] private float jobTimeLimit = 30f;
+    [SerializeField] private int baseReward = 100;
 
-    [Header("Job Points")]
-    [SerializeField] private PassengerPickup pickupPoint;
-    [SerializeField] private PassengerDestination destinationPoint;
-
-    private GameObject pickupMarker;
-    private GameObject destinationMarker;
+    [Header("References")]
     [SerializeField] private TaxiWallet wallet;
+
+    private readonly List<TaxiJobPoint> pickupPoints = new();
+    private readonly List<TaxiJobPoint> destinationPoints = new();
 
     private JobState currentState = JobState.WaitingForPassenger;
     private float remainingTime;
+
+    private TaxiJobPoint currentPickup;
+    private TaxiJobPoint currentDestination;
 
     public JobState CurrentState => currentState;
     public float RemainingTime => remainingTime;
 
     private void Awake()
     {
-        pickupMarker = pickupPoint.transform.Find("PickupMarker")?.gameObject;
-        destinationMarker = destinationPoint.transform.Find("DestinationMarker")?.gameObject;
+        TaxiJobPoint[] points = FindObjectsByType<TaxiJobPoint>(
+            FindObjectsInactive.Include,
+            FindObjectsSortMode.None
+        );
+
+        foreach (TaxiJobPoint point in points)
+        {
+            if (point.Type == TaxiJobPoint.PointType.Pickup)
+                pickupPoints.Add(point);
+            else
+                destinationPoints.Add(point);
+        }
     }
 
     private void Start()
     {
-        UpdateMarkers();
+        if (pickupPoints.Count == 0 || destinationPoints.Count == 0)
+        {
+            Debug.LogError("TaxiJobManager requires at least one pickup and one destination point.");
+            return;
+        }
+
+        StartNextJob();
     }
 
     private void Update()
@@ -51,8 +70,28 @@ public class TaxiJobManager : MonoBehaviour
             currentState = JobState.JobFailed;
 
             Debug.Log("Job failed! Time ran out.");
+
             UpdateMarkers();
         }
+    }
+
+    private void StartNextJob()
+    {
+        currentPickup = pickupPoints[Random.Range(0, pickupPoints.Count)];
+
+        do
+        {
+            currentDestination =
+                destinationPoints[Random.Range(0, destinationPoints.Count)];
+        }
+        while (currentDestination == currentPickup &&
+               destinationPoints.Count > 1);
+
+        currentState = JobState.WaitingForPassenger;
+
+        UpdateMarkers();
+
+        Debug.Log("New passenger is waiting.");
     }
 
     public void PassengerPickedUp()
@@ -75,24 +114,34 @@ public class TaxiJobManager : MonoBehaviour
 
         currentState = JobState.JobComplete;
 
-        const int reward = 100;
-
         if (wallet != null)
         {
-            wallet.AddCredits(reward);
+            wallet.AddCredits(baseReward);
         }
 
-        Debug.Log($"Passenger delivered! Reward: {reward} credits.");
+        Debug.Log($"Passenger delivered! Reward: {baseReward} credits.");
 
         UpdateMarkers();
+
+        Invoke(nameof(StartNextJob), 1f);
     }
 
     private void UpdateMarkers()
     {
-        if (pickupMarker != null)
-            pickupMarker.SetActive(currentState == JobState.WaitingForPassenger);
+        foreach (TaxiJobPoint point in pickupPoints)
+        {
+            bool active = point == currentPickup &&
+                          currentState == JobState.WaitingForPassenger;
 
-        if (destinationMarker != null)
-            destinationMarker.SetActive(currentState == JobState.PassengerOnBoard);
+            point.SetMarkerVisible(active);
+        }
+
+        foreach (TaxiJobPoint point in destinationPoints)
+        {
+            bool active = point == currentDestination &&
+                          currentState == JobState.PassengerOnBoard;
+
+            point.SetMarkerVisible(active);
+        }
     }
 }
