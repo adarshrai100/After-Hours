@@ -2,13 +2,30 @@ using UnityEngine;
 
 public class PassengerPickup : MonoBehaviour
 {
-    [SerializeField] private TaxiJobManager jobManager;
-
     private void OnTriggerEnter(Collider other)
     {
         if (!other.CompareTag("Player"))
             return;
 
-        jobManager.PassengerPickedUp();
+        TaxiJobManager jobManager =
+            FindFirstObjectByType<TaxiJobManager>();
+
+        if (jobManager == null)
+            return;
+
+        bool pickedUp = jobManager.TryPickupPassenger(
+            GetComponent<TaxiJobPoint>()
+        );
+
+        if (!pickedUp)
+            return;
+
+        PassengerController passenger =
+            FindFirstObjectByType<PassengerController>();
+
+        if (passenger != null)
+        {
+            passenger.EnterTaxi();
+        }
     }
 }

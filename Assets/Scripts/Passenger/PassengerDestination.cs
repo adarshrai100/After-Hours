@@ -2,13 +2,19 @@ using UnityEngine;
 
 public class PassengerDestination : MonoBehaviour
 {
-    [SerializeField] private TaxiJobManager jobManager;
-
     private void OnTriggerEnter(Collider other)
     {
         if (!other.CompareTag("Player"))
             return;
 
-        jobManager.PassengerDelivered();
+        TaxiJobManager jobManager =
+            FindFirstObjectByType<TaxiJobManager>();
+
+        if (jobManager == null)
+            return;
+
+        jobManager.TryDeliverPassenger(
+            GetComponent<TaxiJobPoint>()
+        );
     }
 }

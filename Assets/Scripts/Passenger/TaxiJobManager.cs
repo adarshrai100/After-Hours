@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 public class TaxiJobManager : MonoBehaviour
@@ -18,6 +18,10 @@ public class TaxiJobManager : MonoBehaviour
     [Header("References")]
     [SerializeField] private TaxiWallet wallet;
 
+    [Header("Passenger")]
+    [SerializeField] private PassengerController passengerPrefab;
+    private PassengerController currentPassenger;
+
     private readonly List<TaxiJobPoint> pickupPoints = new();
     private readonly List<TaxiJobPoint> destinationPoints = new();
 
@@ -29,6 +33,9 @@ public class TaxiJobManager : MonoBehaviour
 
     public JobState CurrentState => currentState;
     public float RemainingTime => remainingTime;
+
+    private TaxiJobPoint previousPickup;
+    private TaxiJobPoint previousDestination;
 
     private void Awake()
     {
@@ -77,26 +84,44 @@ public class TaxiJobManager : MonoBehaviour
 
     private void StartNextJob()
     {
-        currentPickup = pickupPoints[Random.Range(0, pickupPoints.Count)];
+        TaxiJobPoint newPickup;
+        TaxiJobPoint newDestination;
 
         do
         {
-            currentDestination =
+            newPickup = pickupPoints[Random.Range(0, pickupPoints.Count)];
+            newDestination =
                 destinationPoints[Random.Range(0, destinationPoints.Count)];
         }
-        while (currentDestination == currentPickup &&
-               destinationPoints.Count > 1);
+        while (
+            pickupPoints.Count > 1 &&
+            destinationPoints.Count > 1 &&
+            newPickup == previousPickup &&
+            newDestination == previousDestination
+        );
+
+        previousPickup = newPickup;
+        previousDestination = newDestination;
+
+        currentPickup = newPickup;
+        currentDestination = newDestination;
 
         currentState = JobState.WaitingForPassenger;
 
+        SpawnPassenger();
         UpdateMarkers();
 
-        Debug.Log("New passenger is waiting.");
+        Debug.Log(
+            $"New job: {currentPickup.name} → {currentDestination.name}"
+        );
     }
 
-    public void PassengerPickedUp()
+    public void PassengerPickedUp(TaxiJobPoint pickupPoint)
     {
         if (currentState != JobState.WaitingForPassenger)
+            return;
+
+        if (pickupPoint != currentPickup)
             return;
 
         currentState = JobState.PassengerOnBoard;
@@ -107,10 +132,13 @@ public class TaxiJobManager : MonoBehaviour
         UpdateMarkers();
     }
 
-    public void PassengerDelivered()
+    public bool TryDeliverPassenger(TaxiJobPoint destinationPoint)
     {
         if (currentState != JobState.PassengerOnBoard)
-            return;
+            return false;
+
+        if (destinationPoint != currentDestination)
+            return false;
 
         currentState = JobState.JobComplete;
 
@@ -124,6 +152,8 @@ public class TaxiJobManager : MonoBehaviour
         UpdateMarkers();
 
         Invoke(nameof(StartNextJob), 1f);
+
+        return true;
     }
 
     private void UpdateMarkers()
@@ -143,5 +173,43 @@ public class TaxiJobManager : MonoBehaviour
 
             point.SetMarkerVisible(active);
         }
+    }
+
+    private void SpawnPassenger()
+    {
+        if (currentPassenger != null)
+        {
+            Destroy(currentPassenger.gameObject);
+        }
+
+        if (passengerPrefab == null)
+            return;
+
+        Vector3 spawnPosition = currentPickup.transform.position;
+        spawnPosition.y = 1f;
+
+        currentPassenger = Instantiate(
+            passengerPrefab,
+            spawnPosition,
+            currentPickup.transform.rotation
+        );
+    }
+
+    public bool TryPickupPassenger(TaxiJobPoint pickupPoint)
+    {
+        if (currentState != JobState.WaitingForPassenger)
+            return false;
+
+        if (pickupPoint != currentPickup)
+            return false;
+
+        currentState = JobState.PassengerOnBoard;
+        remainingTime = jobTimeLimit;
+
+        Debug.Log($"Job started! Time limit: {jobTimeLimit:F0} seconds.");
+
+        UpdateMarkers();
+
+        return true;
     }
 }
