@@ -11,6 +11,9 @@ public class TaxiJobManager : MonoBehaviour
         JobFailed
     }
 
+    [Header("Run")]
+    [SerializeField] private RunManager runManager;
+
     [Header("Job Settings")]
     [SerializeField] private float jobTimeLimit = 30f;
     [SerializeField] private int baseReward = 100;
@@ -82,11 +85,20 @@ public class TaxiJobManager : MonoBehaviour
             Debug.Log("Job failed! Time ran out.");
 
             UpdateMarkers();
+
+            if (runManager != null)
+            {
+                runManager.EndRun();
+            }
         }
     }
 
     private void StartNextJob()
     {
+        if (runManager != null && !runManager.IsPlaying)
+            return;
+
+
         TaxiJobPoint newPickup;
         TaxiJobPoint newDestination;
 
@@ -152,6 +164,9 @@ public class TaxiJobManager : MonoBehaviour
 
     public bool TryDeliverPassenger(TaxiJobPoint destinationPoint)
     {
+        if (runManager != null && !runManager.IsPlaying)
+            return false;
+
         if (currentState != JobState.PassengerOnBoard)
             return false;
 
@@ -217,6 +232,9 @@ public class TaxiJobManager : MonoBehaviour
 
     public bool TryPickupPassenger(TaxiJobPoint pickupPoint)
     {
+        if (runManager != null && !runManager.IsPlaying)
+            return false;
+
         if (currentState != JobState.WaitingForPassenger)
             return false;
 
@@ -235,5 +253,24 @@ public class TaxiJobManager : MonoBehaviour
         UpdateMarkers();
 
         return true;
+    }
+
+    public void RestartJobs()
+    {
+        CancelInvoke(nameof(StartNextJob));
+
+        if (currentPassenger != null)
+        {
+            Destroy(currentPassenger);
+            currentPassenger = null;
+        }
+
+        previousPickup = null;
+        previousDestination = null;
+
+        currentState = JobState.WaitingForPassenger;
+        remainingTime = 0f;
+
+        StartNextJob();
     }
 }
