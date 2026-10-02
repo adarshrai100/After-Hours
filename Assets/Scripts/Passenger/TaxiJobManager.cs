@@ -36,6 +36,9 @@ public class TaxiJobManager : MonoBehaviour
 
     private TaxiJobPoint previousPickup;
     private TaxiJobPoint previousDestination;
+    private float currentJobDistance;
+    private float currentJobTimeLimit;
+    private int currentJobReward;
 
     private void Awake()
     {
@@ -106,6 +109,21 @@ public class TaxiJobManager : MonoBehaviour
         currentPickup = newPickup;
         currentDestination = newDestination;
 
+        currentJobDistance = Vector3.Distance(
+    currentPickup.transform.position,
+    currentDestination.transform.position
+);
+
+        currentJobTimeLimit = Mathf.Clamp(
+            currentJobDistance * 0.8f,
+            15f,
+            60f
+        );
+
+        currentJobReward = Mathf.RoundToInt(
+            Mathf.Clamp(currentJobDistance * 5f, 75f, 300f)
+        );
+
         currentState = JobState.WaitingForPassenger;
 
         SpawnPassenger();
@@ -144,10 +162,12 @@ public class TaxiJobManager : MonoBehaviour
 
         if (wallet != null)
         {
-            wallet.AddCredits(baseReward);
+            wallet.AddCredits(currentJobReward);
         }
 
-        Debug.Log($"Passenger delivered! Reward: {baseReward} credits.");
+            Debug.Log(
+        $"Passenger delivered! Reward: {currentJobReward} credits."
+    );
 
         UpdateMarkers();
 
@@ -204,9 +224,13 @@ public class TaxiJobManager : MonoBehaviour
             return false;
 
         currentState = JobState.PassengerOnBoard;
-        remainingTime = jobTimeLimit;
+        remainingTime = currentJobTimeLimit;
 
-        Debug.Log($"Job started! Time limit: {jobTimeLimit:F0} seconds.");
+        Debug.Log(
+        $"Job started! Distance: {currentJobDistance:F1} | " +
+        $"Time: {currentJobTimeLimit:F0}s | " +
+        $"Reward: {currentJobReward}"
+    );
 
         UpdateMarkers();
 

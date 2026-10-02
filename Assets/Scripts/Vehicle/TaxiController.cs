@@ -11,7 +11,7 @@ public class TaxiController : MonoBehaviour
     [SerializeField] private float naturalDeceleration = 4f;
 
     [Header("Steering")]
-    [SerializeField] private float steeringSpeed = 75f;
+    [SerializeField] private float steeringSpeed = 105f;
 
     [Header("Collision")]
     [SerializeField] private float collisionSkin = 0.05f;

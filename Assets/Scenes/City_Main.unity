@@ -219,7 +219,7 @@ MonoBehaviour:
   maxForwardSpeed: 18
   maxReverseSpeed: 7
   naturalDeceleration: 4
-  steeringSpeed: 90
+  steeringSpeed: 105
   collisionSkin: 0.05
 --- !u!114 &69908653
 MonoBehaviour:
@@ -413,7 +413,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 39ec8634cda7f054cb1324299f1c2fa3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PassengerPickup
-  jobManager: {fileID: 1314458752}
 --- !u!114 &283984262
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1151,7 +1150,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1b329f06b08614a4da99f111981ab077, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PassengerDestination
-  jobManager: {fileID: 1314458752}
 --- !u!114 &589923274
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2923,7 +2921,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1b329f06b08614a4da99f111981ab077, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PassengerDestination
-  jobManager: {fileID: 1314458752}
 --- !u!65 &1723139258
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -3117,7 +3114,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 39ec8634cda7f054cb1324299f1c2fa3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PassengerPickup
-  jobManager: {fileID: 1314458752}
 --- !u!65 &1737808077
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -3565,7 +3561,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 39ec8634cda7f054cb1324299f1c2fa3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PassengerPickup
-  jobManager: {fileID: 1314458752}
 --- !u!65 &1811274667
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -3798,7 +3793,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1b329f06b08614a4da99f111981ab077, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PassengerDestination
-  jobManager: {fileID: 1314458752}
 --- !u!65 &2082107054
 BoxCollider:
   m_ObjectHideFlags: 0
