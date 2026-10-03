@@ -155,4 +155,9 @@ public class TaxiController : MonoBehaviour
             Quaternion.Euler(0f, rotationAmount, 0f)
         );
     }
+
+    public void StopImmediately()
+    {
+        currentSpeed = 0f;
+    }
 }
