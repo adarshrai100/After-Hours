@@ -12,6 +12,8 @@ public class TrafficIntersection : MonoBehaviour
     [SerializeField] private TrafficLane northboundLane;
     [SerializeField] private TrafficLane southboundLane;
 
+    private TrafficController occupyingCar;
+
     public enum TurnDirection
     {
         Straight,
@@ -216,5 +218,29 @@ public class TrafficIntersection : MonoBehaviour
         }
 
         return null;
+    }
+
+    public bool IsOccupiedByOther(TrafficController car)
+    {
+        return occupyingCar != null && occupyingCar != car;
+    }
+
+    public bool TryEnter(TrafficController car)
+    {
+        if (occupyingCar != null && occupyingCar != car)
+            return false;
+
+        occupyingCar = car;
+        Debug.Log($"Intersection entered by {car.name}");
+        return true;
+    }
+
+    public void Exit(TrafficController car)
+    {
+        if (occupyingCar == car)
+        {
+            occupyingCar = null;
+            Debug.Log($"Intersection released by {car.name}");
+        }
     }
 }

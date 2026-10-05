@@ -19,6 +19,7 @@ public class TrafficController : MonoBehaviour
     private TrafficLane outgoingLane;
 
     private bool enteringIntersection;
+    private bool waitingForIntersection;
 
     private Vector3 turnP0;
     private Vector3 turnP1;
@@ -77,9 +78,33 @@ public class TrafficController : MonoBehaviour
             return;
         }
 
+        if (waitingForIntersection)
+        {
+            if (intersection == null || intersection.TryEnter(this))
+            {
+                waitingForIntersection = false;
+
+                currentSpeed = moveSpeed;
+
+                BeginIntersectionTurn();
+            }
+            else
+            {
+                currentSpeed = Mathf.MoveTowards(
+                    currentSpeed,
+                    0f,
+                    brakingSpeed * Time.deltaTime
+                );
+
+                return;
+            }
+
+            return;
+        }
+
         CheckIntersection();
 
-        if (enteringIntersection || goingStraight)
+        if (enteringIntersection || goingStraight || waitingForIntersection)
             return;
 
         UpdateSpeed();
@@ -178,34 +203,40 @@ public class TrafficController : MonoBehaviour
         if (intersection == null || currentLane == null)
             return;
 
-        Vector3 center =
-            intersection.GetIntersectionCenter();
+        Vector3 center = intersection.GetIntersectionCenter();
 
-        Vector3 toIntersection =
-            center - transform.position;
-
+        Vector3 toIntersection = center - transform.position;
         toIntersection.y = 0f;
 
-        float distance =
-            toIntersection.magnitude;
+        float distance = toIntersection.magnitude;
 
         if (distance > intersection.IntersectionHalfSize + 2f)
             return;
 
-        Vector3 direction =
-            currentLane.Direction;
+        Vector3 direction = currentLane.Direction;
 
-        // The intersection must be in front of the car.
         if (Vector3.Dot(direction, toIntersection.normalized) < 0.5f)
             return;
+
+        if (!intersection.TryEnter(this))
+        {
+            waitingForIntersection = true;
+
+            currentSpeed = Mathf.MoveTowards(
+                currentSpeed,
+                0f,
+                brakingSpeed * Time.deltaTime
+            );
+
+            return;
+        }
 
         BeginIntersectionTurn();
     }
 
     private void BeginIntersectionTurn()
     {
-        currentTurn =
-            intersection.GetRandomTurn();
+        currentTurn = intersection.GetRandomTurn();
 
         outgoingLane =
             intersection.GetOutgoingLane(
@@ -213,14 +244,19 @@ public class TrafficController : MonoBehaviour
                 currentTurn
             );
 
+        if (outgoingLane == null)
+        {
+            if (intersection != null)
+                intersection.Exit(this);
+
+            return;
+        }
+
         if (currentTurn == TrafficIntersection.TurnDirection.Straight)
         {
             goingStraight = true;
             return;
         }
-
-        if (outgoingLane == null)
-            return;
 
         intersection.GetTurnPoints(
             currentLane,
@@ -333,15 +369,16 @@ public class TrafficController : MonoBehaviour
     {
         goingStraight = false;
 
+        if (intersection != null)
+            intersection.Exit(this);
+
         if (outgoingLane == null || outgoingLane.Route == null)
             return;
 
         currentLane = outgoingLane;
         route = outgoingLane.Route;
-
         currentPointIndex = 1;
         currentTarget = route.GetPoint(currentPointIndex);
-
         currentSpeed = moveSpeed;
     }
 
@@ -364,6 +401,9 @@ public class TrafficController : MonoBehaviour
         if (distance >= intersection.IntersectionHalfSize + 2f)
         {
             goingStraight = false;
+
+            if (intersection != null)
+                intersection.Exit(this);
         }
     }
 
