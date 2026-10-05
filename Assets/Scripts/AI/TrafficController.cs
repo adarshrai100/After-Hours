@@ -12,6 +12,22 @@ public class TrafficController : MonoBehaviour
     [SerializeField] private float brakingSpeed = 12f;
     [SerializeField] private float accelerationSpeed = 5f;
 
+
+    [SerializeField] private TrafficLane currentLane;
+    private TrafficLane spawnLane;
+    private TrafficIntersection intersection;
+    private TrafficLane outgoingLane;
+
+    private bool enteringIntersection;
+
+    private Vector3 turnP0;
+    private Vector3 turnP1;
+    private Vector3 turnP2;
+    private Vector3 turnP3;
+
+    private float intersectionProgress;
+
+
     private TrafficRoute route;
     private TrafficManager trafficManager;
 
@@ -20,12 +36,22 @@ public class TrafficController : MonoBehaviour
 
     private float currentSpeed;
 
+    private TrafficIntersection.TurnDirection currentTurn;
+    private bool goingStraight;
+
     public void SetRoute(
         TrafficRoute newRoute,
-        TrafficManager newTrafficManager)
+        TrafficManager newTrafficManager,
+        TrafficLane newLane = null,
+        TrafficIntersection newIntersection = null)
     {
         route = newRoute;
         trafficManager = newTrafficManager;
+        currentLane = newLane;
+        spawnLane = newLane;
+
+        intersection = newIntersection;
+        outgoingLane = null;
 
         currentPointIndex = 1;
         currentSpeed = moveSpeed;
@@ -37,6 +63,23 @@ public class TrafficController : MonoBehaviour
     private void Update()
     {
         if (route == null || currentTarget == null)
+            return;
+
+        if (enteringIntersection)
+        {
+            FollowIntersectionTurn();
+            return;
+        }
+
+        if (goingStraight)
+        {
+            ContinueStraightThroughIntersection();
+            return;
+        }
+
+        CheckIntersection();
+
+        if (enteringIntersection || goingStraight)
             return;
 
         UpdateSpeed();
@@ -97,8 +140,8 @@ public class TrafficController : MonoBehaviour
         {
             if (currentPointIndex >= route.PointCount - 1)
             {
-                if (trafficManager != null)
-                    trafficManager.SpawnReplacement(route);
+                if (trafficManager != null && spawnLane != null)
+                    trafficManager.SpawnReplacement(spawnLane);
 
                 Destroy(gameObject);
                 return;
@@ -129,4 +172,199 @@ public class TrafficController : MonoBehaviour
             rotationSpeed * Time.deltaTime
         );
     }
+
+    private void CheckIntersection()
+    {
+        if (intersection == null || currentLane == null)
+            return;
+
+        Vector3 center =
+            intersection.GetIntersectionCenter();
+
+        Vector3 toIntersection =
+            center - transform.position;
+
+        toIntersection.y = 0f;
+
+        float distance =
+            toIntersection.magnitude;
+
+        if (distance > intersection.IntersectionHalfSize + 2f)
+            return;
+
+        Vector3 direction =
+            currentLane.Direction;
+
+        // The intersection must be in front of the car.
+        if (Vector3.Dot(direction, toIntersection.normalized) < 0.5f)
+            return;
+
+        BeginIntersectionTurn();
+    }
+
+    private void BeginIntersectionTurn()
+    {
+        currentTurn =
+            intersection.GetRandomTurn();
+
+        outgoingLane =
+            intersection.GetOutgoingLane(
+                currentLane,
+                currentTurn
+            );
+
+        if (currentTurn == TrafficIntersection.TurnDirection.Straight)
+        {
+            goingStraight = true;
+            return;
+        }
+
+        if (outgoingLane == null)
+            return;
+
+        intersection.GetTurnPoints(
+            currentLane,
+            outgoingLane,
+            out turnP0,
+            out turnP1,
+            out turnP2,
+            out turnP3
+        );
+
+        turnP0 = transform.position;
+
+        turnP0.y = transform.position.y;
+        turnP1.y = transform.position.y;
+        turnP2.y = transform.position.y;
+        turnP3.y = transform.position.y;
+
+        intersectionProgress = 0f;
+        enteringIntersection = true;
+    }
+
+    private void FollowIntersectionTurn()
+    {
+        float curveLength =
+            Vector3.Distance(turnP0, turnP1) +
+            Vector3.Distance(turnP1, turnP2) +
+            Vector3.Distance(turnP2, turnP3);
+
+        intersectionProgress +=
+            (currentSpeed * Time.deltaTime) /
+            Mathf.Max(curveLength, 0.01f);
+
+        intersectionProgress =
+            Mathf.Clamp01(intersectionProgress);
+
+        Vector3 position =
+            CalculateCubicBezier(
+                intersectionProgress,
+                turnP0,
+                turnP1,
+                turnP2,
+                turnP3
+            );
+
+        Vector3 tangent =
+            CalculateCubicBezierDerivative(
+                intersectionProgress,
+                turnP0,
+                turnP1,
+                turnP2,
+                turnP3
+            );
+
+        tangent.y = 0f;
+
+        if (tangent.sqrMagnitude > 0.001f)
+        {
+            transform.rotation =
+                Quaternion.LookRotation(
+                    tangent.normalized,
+                    Vector3.up
+                );
+        }
+
+        transform.position = position;
+
+        if (intersectionProgress >= 1f)
+        {
+            transform.position = turnP3;
+
+            enteringIntersection = false;
+
+            CompleteIntersectionTurn();
+        }
+    }
+
+    private Vector3 CalculateCubicBezier(
+    float t,
+    Vector3 a,
+    Vector3 b,
+    Vector3 c,
+    Vector3 d)
+    {
+        float u = 1f - t;
+
+        return
+            u * u * u * a +
+            3f * u * u * t * b +
+            3f * u * t * t * c +
+            t * t * t * d;
+    }
+
+    private Vector3 CalculateCubicBezierDerivative(
+        float t,
+        Vector3 a,
+        Vector3 b,
+        Vector3 c,
+        Vector3 d)
+    {
+        float u = 1f - t;
+
+        return
+            3f * u * u * (b - a) +
+            6f * u * t * (c - b) +
+            3f * t * t * (d - c);
+    }
+
+
+    private void CompleteIntersectionTurn()
+    {
+        goingStraight = false;
+
+        if (outgoingLane == null || outgoingLane.Route == null)
+            return;
+
+        currentLane = outgoingLane;
+        route = outgoingLane.Route;
+
+        currentPointIndex = 1;
+        currentTarget = route.GetPoint(currentPointIndex);
+
+        currentSpeed = moveSpeed;
+    }
+
+    private void ContinueStraightThroughIntersection()
+    {
+        Vector3 direction = currentLane.Direction;
+
+        transform.position +=
+            direction * currentSpeed * Time.deltaTime;
+
+        transform.rotation =
+            Quaternion.LookRotation(direction);
+
+        Vector3 center =
+            intersection.GetIntersectionCenter();
+
+        float distance =
+            Vector3.Distance(transform.position, center);
+
+        if (distance >= intersection.IntersectionHalfSize + 2f)
+        {
+            goingStraight = false;
+        }
+    }
+
 }

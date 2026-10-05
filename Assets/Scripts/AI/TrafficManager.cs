@@ -10,6 +10,9 @@ public class TrafficManager : MonoBehaviour
     [SerializeField] private int trafficCount = 4;
     [SerializeField] private float spawnSpacing = 12f;
 
+    [Header("Intersection")]
+    [SerializeField] private TrafficIntersection centerIntersection;
+
     private void Start()
     {
         SpawnInitialTraffic();
@@ -26,20 +29,30 @@ public class TrafficManager : MonoBehaviour
 
         for (int i = 0; i < trafficCount; i++)
         {
-            TrafficRoute route =
-                routes[i % routes.Length];
+            TrafficRoute route = routes[i % routes.Length];
 
-            SpawnCar(route, i / routes.Length);
+            TrafficLane lane =
+                FindLaneForRoute(route);
+
+            SpawnCar(route, lane, i / routes.Length);
         }
     }
 
-    public void SpawnReplacement(TrafficRoute route)
+    public void SpawnReplacement(TrafficLane lane)
     {
-        SpawnCar(route, 0);
+        if (lane == null || lane.Route == null)
+            return;
+
+        SpawnCar(
+            lane.Route,
+            lane,
+            0
+        );
     }
 
     private void SpawnCar(
         TrafficRoute route,
+        TrafficLane lane,
         int spacingIndex)
     {
         if (route == null || route.PointCount < 2)
@@ -78,8 +91,28 @@ public class TrafficManager : MonoBehaviour
             car.GetComponent<TrafficController>();
 
         if (controller != null)
+            controller.SetRoute(
+                route,
+                this,
+                lane,
+                centerIntersection
+            );
+    }
+
+    private TrafficLane FindLaneForRoute(TrafficRoute route)
+    {
+        TrafficLane[] lanes =
+            FindObjectsByType<TrafficLane>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None
+            );
+
+        foreach (TrafficLane lane in lanes)
         {
-            controller.SetRoute(route, this);
+            if (lane.Route == route)
+                return lane;
         }
+
+        return null;
     }
 }

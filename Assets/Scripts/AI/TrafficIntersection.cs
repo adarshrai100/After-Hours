@@ -12,6 +12,14 @@ public class TrafficIntersection : MonoBehaviour
     [SerializeField] private TrafficLane northboundLane;
     [SerializeField] private TrafficLane southboundLane;
 
+    public enum TurnDirection
+    {
+        Straight,
+        Left,
+        Right
+    }
+
+
     public Vector3 GetTurnPoint(
         Vector3 incomingDirection,
         Vector3 outgoingDirection)
@@ -42,12 +50,12 @@ public class TrafficIntersection : MonoBehaviour
     public float IntersectionHalfSize => intersectionHalfSize;
 
     public void GetTurnPoints(
-    TrafficLane incomingLane,
-    TrafficLane outgoingLane,
-    out Vector3 startPoint,
-    out Vector3 controlPoint1,
-    out Vector3 controlPoint2,
-    out Vector3 endPoint)
+        TrafficLane incomingLane,
+        TrafficLane outgoingLane,
+        out Vector3 startPoint,
+        out Vector3 controlPoint1,
+        out Vector3 controlPoint2,
+        out Vector3 endPoint)
     {
         Vector3 center = transform.position;
 
@@ -57,34 +65,44 @@ public class TrafficIntersection : MonoBehaviour
         Vector3 outgoingDirection =
             outgoingLane.Direction;
 
-        float halfSize = intersectionHalfSize;
+        incomingDirection.y = 0f;
+        outgoingDirection.y = 0f;
 
-        // Determine the lateral position of the incoming lane.
+        incomingDirection.Normalize();
+        outgoingDirection.Normalize();
+
+        // Find the lateral offset of the incoming lane.
         Vector3 incomingOffset =
             incomingLane.StartPosition - center;
 
         incomingOffset -=
-            Vector3.Project(incomingOffset, incomingDirection);
+            Vector3.Project(
+                incomingOffset,
+                incomingDirection
+            );
 
-        // Determine the lateral position of the outgoing lane.
+        // Find the lateral offset of the outgoing lane.
         Vector3 outgoingOffset =
             outgoingLane.StartPosition - center;
 
         outgoingOffset -=
-            Vector3.Project(outgoingOffset, outgoingDirection);
+            Vector3.Project(
+                outgoingOffset,
+                outgoingDirection
+            );
 
         startPoint =
             center -
-            incomingDirection * halfSize +
+            incomingDirection * intersectionHalfSize +
             incomingOffset;
 
         endPoint =
             center +
-            outgoingDirection * halfSize +
+            outgoingDirection * intersectionHalfSize +
             outgoingOffset;
 
         float controlDistance =
-            halfSize - laneOffset;
+            intersectionHalfSize - laneOffset;
 
         controlPoint1 =
             startPoint +
@@ -98,5 +116,105 @@ public class TrafficIntersection : MonoBehaviour
         controlPoint1.y = 0f;
         controlPoint2.y = 0f;
         endPoint.y = 0f;
+    }
+
+    public TurnDirection GetRandomTurn()
+    {
+        float roll = Random.value;
+
+        if (roll < 0.50f)
+            return TurnDirection.Straight;
+
+        if (roll < 0.75f)
+            return TurnDirection.Left;
+
+        return TurnDirection.Right;
+    }
+
+    public void DebugTurnDecision(TurnDirection turn)
+    {
+        Debug.Log(
+            $"Intersection decision: {turn}"
+        );
+    }
+
+    public TrafficLane GetOutgoingLane(
+    TrafficLane incomingLane,
+    TurnDirection turn)
+    {
+        if (incomingLane == null)
+            return null;
+
+        Vector3 incomingDirection =
+            incomingLane.Direction;
+
+        incomingDirection.y = 0f;
+        incomingDirection.Normalize();
+
+        // Eastbound
+        if (incomingDirection == Vector3.right)
+        {
+            switch (turn)
+            {
+                case TurnDirection.Straight:
+                    return incomingLane;
+
+                case TurnDirection.Left:
+                    return northboundLane;
+
+                case TurnDirection.Right:
+                    return southboundLane;
+            }
+        }
+
+        // Westbound
+        if (incomingDirection == Vector3.left)
+        {
+            switch (turn)
+            {
+                case TurnDirection.Straight:
+                    return incomingLane;
+
+                case TurnDirection.Left:
+                    return southboundLane;
+
+                case TurnDirection.Right:
+                    return northboundLane;
+            }
+        }
+
+        // Northbound
+        if (incomingDirection == Vector3.forward)
+        {
+            switch (turn)
+            {
+                case TurnDirection.Straight:
+                    return incomingLane;
+
+                case TurnDirection.Left:
+                    return westboundLane;
+
+                case TurnDirection.Right:
+                    return eastboundLane;
+            }
+        }
+
+        // Southbound
+        if (incomingDirection == Vector3.back)
+        {
+            switch (turn)
+            {
+                case TurnDirection.Straight:
+                    return incomingLane;
+
+                case TurnDirection.Left:
+                    return eastboundLane;
+
+                case TurnDirection.Right:
+                    return westboundLane;
+            }
+        }
+
+        return null;
     }
 }
